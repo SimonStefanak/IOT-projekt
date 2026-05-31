@@ -37,7 +37,7 @@ void onWebSocketEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
 }
 
 void setup() {
-
+  btStop();
 
   Serial.begin(115200);
   delay(1000); // give Serial Monitor time to open
