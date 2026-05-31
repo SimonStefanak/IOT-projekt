@@ -37,7 +37,7 @@ function nextNote() {
 const ws = new WebSocket("ws://192.168.100.34/ws");
 
 ws.onmessage = (event) => {
-    console.log(event.data); // add this
+    console.log(event.data); 
     const data = JSON.parse(event.data);
     attempts++;
 
@@ -49,5 +49,4 @@ ws.onmessage = (event) => {
     }
 };
 
-// Pick first note on load
 pickRandomNote();
