@@ -1,8 +1,8 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 
-const char* ssid = "HUAWEI-M4ma-2G";
-const char* password = "Ce2cvj3x";
+const char* ssid = "ZTE-SN4PTC";
+const char* password = "hp65xc92nhd5";
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
