@@ -23,15 +23,17 @@ function pickNote() {
   correct = false;
 }
 
+// in ${attempts} attempts (on line 36)
+
 function nextNote() {
     if (correct) {
     level++;
     document.getElementById("cents").textContent = "";
     
-    if (level >= 2) {
+    if (level >= 6) {
     document.body.innerHTML = `
         <h1>Congratulations!</h1>
-        <p>You completed all 5 levels in ${attempts} attempts.</p>
+        <p>You completed all 5 levels.</p> 
         <button onclick="location.reload()" id="againBtn">Play Again</button>
     `;
     return;
@@ -41,7 +43,7 @@ function nextNote() {
   }
 }
 
-const ws = new WebSocket("ws://192.168.1.47/ws");
+const ws = new WebSocket("ws://172.20.10.10/ws");
 
 ws.onmessage = (event) => {
     console.log(event.data); 

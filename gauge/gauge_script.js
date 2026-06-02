@@ -1,4 +1,4 @@
-const ws = new WebSocket("ws://192.168.1.47/ws");
+const ws = new WebSocket("ws://172.20.10.10/ws");
 const canvas = document.getElementById('gauge');
 const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
@@ -92,5 +92,3 @@ ws.onmessage = (event) => {
 };
 
 drawGauge(0);
-
-
