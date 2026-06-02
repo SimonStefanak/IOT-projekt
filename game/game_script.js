@@ -1,4 +1,11 @@
-const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const strings = [
+  { note: "E", octave: 2 },
+  { note: "A", octave: 2 },
+  { note: "D", octave: 3 },
+  { note: "G", octave: 3 },
+  { note: "B", octave: 3 },
+  { note: "E", octave: 4 }
+];
 const octaves = [2, 3, 4, 5];
 
 
@@ -8,12 +15,12 @@ let correct = false;
 let level = 0;
 let attempts = 0;
 
-function pickRandomNote() {
-    targetNote = notes[Math.floor(Math.random() * notes.length)];
-    targetOctave = octaves[Math.floor(Math.random() * octaves.length)];
-    document.getElementById("target").textContent = targetNote + targetOctave;
-    document.getElementById("btn").classList.remove("correct");
-    correct = false;
+function pickNote() {
+  targetNote = strings[level].note;
+  targetOctave = strings[level].octave;
+  document.getElementById("target").textContent = targetNote + targetOctave;
+  document.getElementById("btn").classList.remove("correct");
+  correct = false;
 }
 
 function nextNote() {
@@ -30,7 +37,7 @@ function nextNote() {
     return;
     }
     
-    pickRandomNote();
+    pickNote();
   }
 }
 
@@ -49,4 +56,4 @@ ws.onmessage = (event) => {
     }
 };
 
-pickRandomNote();
+pickNote();

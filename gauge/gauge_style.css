@@ -3,65 +3,56 @@ body{
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #0a1a0f;
+  background-color: #ffffff;
 }
 .tuner-wrap {
-  background: #0a1a0f;
-  border-color: black;
-  border-radius: 12px;
+  background: #fff;
+  border-radius: 8px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: 'Courier New', monospace;
+  font-family: monospace;
   max-width: 480px;
   margin: 0 auto;
 }
 .note-display {
   font-size: 64px;
   font-weight: bold;
-  color: #39ff6a;
+  color: #000;
   letter-spacing: 4px;
   line-height: 1;
-  text-shadow: 0 0 8px #39ff6a44;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .freq-display {
-  font-size: 14px;
-  color: #2a8a44;
-  margin-bottom: 20px;
-  letter-spacing: 2px;
-}
-canvas {
-  display: block;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 16px;
+  letter-spacing: 1px;
 }
 .cents-display {
-  font-size: 18px;
-  color: #39ff6a;
-  margin-top: 12px;
-  letter-spacing: 2px;
-  min-height: 24px;
+  font-size: 15px;
+  color: #000;
+  margin-top: 10px;
+  letter-spacing: 1px;
+  min-height: 22px;
 }
 .controls {
-  margin-top: 20px;
+  margin-top: 16px;
   display: flex;
   gap: 12px;
   align-items: center;
 }
 .controls label {
-  color: #2a8a44;
+  color: #555;
   font-size: 13px;
-  font-family: 'Courier New', monospace;
-}
-.controls input {
-  width: 160px;
-  accent-color: #39ff6a;
+  font-family: monospace;
 }
 .controls span {
-  color: #39ff6a;
+  color: #000;
   font-size: 13px;
-  min-width: 60px;
-  font-family: 'Courier New', monospace;
+  min-width: 40px;
+  font-family: monospace;
 }
 #startBtn {
   width: 200px;
@@ -70,9 +61,9 @@ canvas {
   border-radius: 20px;
   font-size: 24px;
   cursor: pointer;
-  background-color: #39ff6a;
+  background-color: #00bb2f;
 }
 #startBtn a {
   text-decoration: none;
-  color: black;
+  color: rgb(255, 255, 255);
 }
