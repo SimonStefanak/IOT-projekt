@@ -4,8 +4,8 @@
 #include <ESPAsyncWebServer.h>
 
 // ─── WiFi ────────────────────────────────────────────────────────
-const char* ssid = "ZTE-SN4PTC";
-const char* password = "hp65xc92nhd5";
+const char* ssid = "iPhone";
+const char* password = "jarosynek";
 
 // ─── WebSocket ───────────────────────────────────────────────────
 AsyncWebServer server(80);

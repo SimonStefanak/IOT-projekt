@@ -41,7 +41,7 @@ function nextNote() {
   }
 }
 
-const ws = new WebSocket("ws://192.168.1.47/ws");
+const ws = new WebSocket("ws://172.20.10.10/ws");
 
 ws.onmessage = (event) => {
     console.log(event.data); 
