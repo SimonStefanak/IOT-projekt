@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tuner</title>
+    <link rel="stylesheet" href="gauge_style.css">
+</head>
+<body>
+  <div class="tuner-container">
+    <div class="note-display" id="noteName">--</div>
+    <div class="freq-display" id="freqVal">0.0 Hz</div>
+    
+    <div class="canvas-wrap">
+      <canvas id="gauge" width="400" height="180"></canvas>
+    </div>
+    
+    <div class="cents-display" id="centsVal">waiting for signal...</div>
+    
+    <a href="game.html" class="start-btn">Start Test</a>
+  </div>
+
+  <script src="gauge_script.js"></script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+:root {
+    --bg-color: #121824;
+    --card-bg: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent-red: #ef4444;
+    --accent-green: #22c55e;
+    --accent-blue: #3b82f6;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+}
+
+.game-container {
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.target-section h2 {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+#target {
+    font-size: 5rem;
+    margin: 0.5rem 0 1.5rem 0;
+    font-weight: 800;
+    color: var(--text-main);
+    transition: color 0.3s, transform 0.3s;
+}
+
+.target-section.correct #target {
+    color: var(--accent-green);
+    transform: scale(1.05);
+    text-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+}
+
+/* Tuner UI */
+.tuner-box {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1.25rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+}
+
+.tuner-meter {
+    position: relative;
+    height: 12px;
+    background: #334155;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+    overflow: visible;
+}
+
+.center-marker {
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    width: 2px;
+    height: 20px;
+    background: var(--text-muted);
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+/* Highlights the +/- 15 cents target window */
+.safe-zone {
+    position: absolute;
+    left: 35%; /* 50% - 15% */
+    width: 30%; /* 15% + 15% */
+    height: 100%;
+    background: rgba(34, 197, 94, 0.15);
+    border-radius: 2px;
+}
+
+#needle {
+    position: absolute;
+    left: 50%;
+    top: -6px;
+    width: 4px;
+    height: 24px;
+    background: var(--accent-red);
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left 0.15s ease-out, background-color 0.2s;
+    z-index: 3;
+}
+
+.tuner-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+#cents {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Buttons */
+button {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: #475569;
+    color: #94a3b8;
+    transition: all 0.3s ease;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+button.correct-ready {
+    background: var(--accent-green);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
+}
+
+button.correct-ready:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.6);
+}
+
+#againBtn {
+    background: var(--accent-blue);
+    color: white;
+    margin-top: 1rem;
+}

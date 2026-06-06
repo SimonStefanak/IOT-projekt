@@ -2,10 +2,11 @@
 #include <LiquidCrystal_I2C.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
+#include <LittleFS.h>
 
 // ─── WiFi ────────────────────────────────────────────────────────
-const char* ssid = "iPhone";
-const char* password = "jarosynek";
+const char* ssid     = "HUAWEI-M4ma-2G";
+const char* password = "Ce2cvj3x";
 
 // ─── WebSocket ───────────────────────────────────────────────────
 AsyncWebServer server(80);
@@ -24,22 +25,22 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 static int16_t audioBuffer[BUFFER_SIZE];
 static float yinBuffer[BUFFER_SIZE / 2];
 
-float lastFreq = 0;
-float currentFreq = 0;
+float lastFreq     = 0;
+float currentFreq  = 0;
 String currentNote = "";
-int currentOctave = 0;
+int currentOctave  = 0;
 int currentCentsOff = 0;
 
-const char* noteNames[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+const char* noteNames[] = {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
 
 // ─── frequencyToNote ─────────────────────────────────────────────
 void frequencyToNote(float frequency) {
   float semitonesFromA4 = 12.0 * log2(frequency / 440.0);
-  int semitones = round(semitonesFromA4);
-  currentCentsOff = round((semitonesFromA4 - semitones) * 100);
-  int noteIndex = ((semitones + 9) % 12 + 12) % 12;
-  currentNote = noteNames[noteIndex];
-  currentOctave = 4 + (int)floor((semitones + 9) / 12.0);
+  int semitones         = round(semitonesFromA4);
+  currentCentsOff       = round((semitonesFromA4 - semitones) * 100);
+  int noteIndex         = ((semitones + 9) % 12 + 12) % 12;
+  currentNote           = noteNames[noteIndex];
+  currentOctave         = 4 + (int)floor((semitones + 9) / 12.0);
 }
 
 // ─── sampleAudio ─────────────────────────────────────────────────
@@ -64,11 +65,11 @@ float yinDetect() {
     }
   }
 
-  yinBuffer[0] = 1.0f;
-  float runningSum = 0;
+  yinBuffer[0]       = 1.0f;
+  float runningSum   = 0;
   for (int tau = 1; tau < halfSize; tau++) {
-    runningSum += yinBuffer[tau];
-    yinBuffer[tau] *= (float)tau / runningSum;
+    runningSum       += yinBuffer[tau];
+    yinBuffer[tau]   *= (float)tau / runningSum;
   }
 
   int tau = 2;
@@ -80,7 +81,7 @@ float yinDetect() {
         float s0 = yinBuffer[tau - 1];
         float s1 = yinBuffer[tau];
         float s2 = yinBuffer[tau + 1];
-        better = tau + (s2 - s0) / (2.0f * (2.0f * s1 - s2 - s0));
+        better   = tau + (s2 - s0) / (2.0f * (2.0f * s1 - s2 - s0));
       }
       return (float)SAMPLE_RATE / better;
     }
@@ -111,7 +112,7 @@ void updateDisplay() {
 // ─── WebSocket event ─────────────────────────────────────────────
 void onWebSocketEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                       AwsEventType type, void *arg, uint8_t *data, size_t len) {
-  if (type == WS_EVT_CONNECT) Serial.println("Client connected");
+  if (type == WS_EVT_CONNECT)    Serial.println("Client connected");
   else if (type == WS_EVT_DISCONNECT) Serial.println("Client disconnected");
 }
 
@@ -152,6 +153,27 @@ void setup() {
 
   lcd.clear();
 
+  // ─── LittleFS ────────────────────────────────────────────────
+  if (!LittleFS.begin(false)) {
+    Serial.println("LittleFS mount failed");
+    return;
+  }
+
+  // debug - zoznam súborov
+  File root = LittleFS.open("/");
+  File file = root.openNextFile();
+  while(file) {
+      Serial.println(file.name());
+      file = root.openNextFile();
+  }
+  
+  // ─── Routes ──────────────────────────────────────────────────
+  server.serveStatic("/", LittleFS, "/").setDefaultFile("gauge.html");
+
+  server.onNotFound([](AsyncWebServerRequest *request){
+    request->send(404, "text/plain", "Not found");
+  });
+
   ws.onEvent(onWebSocketEvent);
   server.addHandler(&ws);
   server.begin();
@@ -182,13 +204,13 @@ void loop() {
 
   if (freq > 70 && freq < 1400) {
     if (lastFreq == 0 || freq > lastFreq * 0.4f) {
-      lastFreq = freq;
+      lastFreq    = freq;
       currentFreq = freq;
       frequencyToNote(freq);
       updateDisplay();
 
-      String json = "{\"note\":\"" + currentNote +
-                    "\",\"octave\":" + String(currentOctave) +
+      String json = "{\"note\":\""  + currentNote +
+                    "\",\"octave\":"   + String(currentOctave) +
                     ",\"frequency\":" + String(currentFreq, 1) +
                     ",\"cents_off\":" + String(currentCentsOff) + "}";
       ws.textAll(json);
