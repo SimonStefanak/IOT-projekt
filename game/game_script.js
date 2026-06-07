@@ -342,10 +342,10 @@
      ===================================================================== */
   function connect(){
     let socket;
-    try { socket = new WebSocket(`ws://${location.host}/ws`); }
+    try { socket = new WebSocket(`ws://192.168.4.1/ws`); }
     catch (e) { scheduleReconnect(); return; }
     ws = socket;
-
+ 
     socket.onopen = () => { wsConnected = true; updateStartMode(); };
     socket.onclose = () => {
       if (ws === socket){ wsConnected = false; signalFreq = 0; lastMsg = null; updateStartMode(); }
