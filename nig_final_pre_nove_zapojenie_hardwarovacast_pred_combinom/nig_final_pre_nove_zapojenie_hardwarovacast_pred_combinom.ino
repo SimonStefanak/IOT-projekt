@@ -5,10 +5,11 @@
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <esp_system.h>
+#include <LittleFS.h>
 
 // ─── WiFi ────────────────────────────────────────────────────────
-const char* ssid     = "iPhone";
-const char* password = "jarosynek";
+const char* ssid     = "HUAWEI-M4ma-2G";
+const char* password = "Ce2cvj3x";
 
 // ─── WebSocket ───────────────────────────────────────────────────
 AsyncWebServer server(80);
@@ -32,7 +33,7 @@ const unsigned long POT_READ_MS = 50;
 int  potStableIndex    = 0;
 int  potCandidateIndex = 0;
 int  potCandidateCount = 0;
-const int POT_CONFIRM  = 2;   // 2 × 50ms = 100ms stabilita
+const int POT_CONFIRM  = 2;
 
 unsigned long lastPotChangeTime = 0;
 const unsigned long POT_IDLE_MS = 2000;
@@ -100,40 +101,25 @@ int readPotIndex() {
 }
 
 // ─── frequencyToNote ─────────────────────────────────────────────
-// NOVÁ MONOCHROMATICKÁ LOGIKA:
-// Detekuje strunu na základe fixných frekvenčných pásiem gitary.
-// Tým sa zabezpečí, že 6. struna bude vždy braná ako 6. struna,
-// aj keď prechádzaš z E Standard (82Hz) do Drop C (65Hz).
 void frequencyToNote(float frequency) {
   int bestIndex = 0;
 
-  // Fixné deliace frekvencie (stredy medzi strunami v bežných ladeniach)
-  if (frequency < 90.0f) {
-    bestIndex = 0; // 6. struna (E, Eb, D, Db, C) -> rozsah cca ~60Hz až 90Hz
-  } else if (frequency < 120.0f) {
-    bestIndex = 1; // 5. struna (A, Ab, G)        -> rozsah cca 90Hz až 120Hz
-  } else if (frequency < 160.0f) {
-    bestIndex = 2; // 4. struna (D, Db, C)        -> rozsah cca 120Hz až 160Hz
-  } else if (frequency < 215.0f) {
-    bestIndex = 3; // 3. struna (G, Gb, F)        -> rozsah cca 160Hz až 215Hz
-  } else if (frequency < 280.0f) {
-    bestIndex = 4; // 2. struna (B, Bb, A)        -> rozsah cca 215Hz až 280Hz
-  } else {
-    bestIndex = 5; // 1. struna (e, eb, d)        -> rozsah nad 280Hz
-  }
+  if      (frequency <  90.0f) bestIndex = 0;
+  else if (frequency < 120.0f) bestIndex = 1;
+  else if (frequency < 160.0f) bestIndex = 2;
+  else if (frequency < 215.0f) bestIndex = 3;
+  else if (frequency < 280.0f) bestIndex = 4;
+  else                         bestIndex = 5;
 
-  // Máme pevne zvolenú strunu, teraz spočítame odchýlku voči aktívnemu ladeniu
   currentStringNum = 6 - bestIndex;
   currentNote      = activeTuning->noteNames[bestIndex];
   float targetFreq = activeTuning->frequencies[bestIndex];
-  
+
   currentCentsOff  = (int)roundf(1200.0f * log2f(frequency / targetFreq));
-  
-  // Obmedzíme rozsah pre grafickú ručičku (displej spracováva max ±50 centov)
+
   if (currentCentsOff >  50) currentCentsOff =  50;
   if (currentCentsOff < -50) currentCentsOff = -50;
 
-  // Nastavenie oktávy pre vizualizáciu
   if      (bestIndex <= 1) currentOctave = 2;
   else if (bestIndex <= 4) currentOctave = 3;
   else                     currentOctave = 4;
@@ -199,7 +185,6 @@ void drawMainInterface(bool isLive) {
   display.clearDisplay();
   display.setTextColor(SH110X_WHITE);
 
-  // Horný riadok
   display.setTextSize(1);
   display.setCursor(0, 0);
   display.print(activeTuning->name);
@@ -208,7 +193,6 @@ void drawMainInterface(bool isLive) {
   display.print(isActive ? "ACT" : "STD");
   display.drawFastHLine(0, 10, 128, SH110X_WHITE);
 
-  // Veľká nota + Hz
   display.setTextSize(3);
   display.setCursor(4, 13);
   display.print(String(strNum) + "." + note);
@@ -221,7 +205,6 @@ void drawMainInterface(bool isLive) {
     display.print("--.-Hz");
   }
 
-  // Stav ladenia – centrovane
   const char* statusStr = "";
   if (freq > 0) {
     if      (abs(cents) <= 5) statusStr = "NALADENE";
@@ -232,7 +215,6 @@ void drawMainInterface(bool isLive) {
   display.setCursor(statusX, 44);
   display.print(statusStr);
 
-  // Grafická ručička
   int centerX = 64;
   int gaugeY  = 61;
   display.drawFastVLine(centerX,      gaugeY - 4, 5, SH110X_WHITE);
@@ -348,7 +330,7 @@ void setup() {
     while (digitalRead(ONOFF_PIN) == HIGH) {
       delay(50);
     }
-    delay(80); // debounce
+    delay(80);
   }
 
   lastSwitchState = true;
@@ -362,7 +344,6 @@ void setup() {
   display.print("Connecting WiFi...");
   display.display();
 
-  Serial.println("Connecting to WiFi...");
   WiFi.begin(ssid, password);
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 20) {
@@ -391,6 +372,19 @@ void setup() {
     delay(1500);
   }
 
+  // ─── LittleFS ────────────────────────────────────────────────
+  if (!LittleFS.begin(false)) {
+    Serial.println("LittleFS mount failed");
+    return;
+  }
+
+  // ─── Routes ──────────────────────────────────────────────────
+  server.serveStatic("/", LittleFS, "/").setDefaultFile("gauge.html");
+
+  server.onNotFound([](AsyncWebServerRequest *request){
+    request->send(404, "text/plain", "Not found");
+  });
+
   ws.onEvent(onWebSocketEvent);
   server.addHandler(&ws);
   server.begin();
@@ -411,7 +405,6 @@ void setup() {
 void loop() {
   ws.cleanupClients();
 
-  // ── 1. ON/OFF switch – vypnutie → esp_restart() ──────────────
   bool swReading = (digitalRead(ONOFF_PIN) == LOW);
   if (!swReading && lastSwitchState) {
     if ((millis() - lastSwitchTime) > SWITCH_DEBOUNCE_MS) {
@@ -427,7 +420,6 @@ void loop() {
     lastSwitchTime  = millis();
   }
 
-  // ── 2. Potenciometer ─────────────────────────────────────────
   if ((millis() - lastPotReadTime) >= POT_READ_MS) {
     lastPotReadTime = millis();
     int newIdx = readPotIndex();
@@ -457,7 +449,6 @@ void loop() {
     showingTuningSelector = false;
   }
 
-  // ── 3. Footswitch ─────────────────────────────────────────────
   bool footActive = (digitalRead(FOOTSWITCH_PIN) == LOW);
   const Tuning* desired = footActive ? &potTunings[potSelectedIndex] : &STANDARD_E;
   if (desired != activeTuning) {
@@ -466,13 +457,11 @@ void loop() {
                String(activeTuning->name) + "\"}");
   }
 
-  // ── 4. Selektor ladenia ───────────────────────────────────────
   if (showingTuningSelector) {
     drawTuningSelector();
     return;
   }
 
-  // ── 5. Audio ─────────────────────────────────────────────────
   sampleAudio();
 
   float rms = 0;

@@ -357,7 +357,7 @@ function applyTuning(name) {
      ===================================================================== */
   function connect(){
     let socket;
-    try { socket = new WebSocket(`ws://192.168.4.1/ws`); }
+    try { socket = new WebSocket(`ws://${location.host}/ws`); }
     catch (e) { scheduleReconnect(); return; }
     ws = socket;
  
