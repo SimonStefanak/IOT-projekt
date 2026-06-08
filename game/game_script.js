@@ -1,21 +1,20 @@
 "use strict";
 (() => {
   /* =====================================================================
-     CONFIG — tweak freely
+     CONFIG
      ===================================================================== */
   const FREQ_MIN = 70;     // Hz mapped to bottom of screen
   const FREQ_MAX = 360;    // Hz mapped to top of screen
-  const LW = 540, LH = 720;// logical canvas resolution (drawing coords)
+  const LW = 540, LH = 720;// logical canvas resolution
 
-  const BIRD_X = 152;      // fixed horizontal position of the bird
-  const BIRD_R = 13;       // bird radius (also used for collision)
-  const PIPE_W = 64;       // pipe width (px)
-  const GAP    = 132;      // gap height (px) — bigger = more forgiving
-  const SCROLL = 140;      // pipe scroll speed (px / second)
-  const SPACING = 300;     // horizontal distance between consecutive pipes
-  const TRAIL_MAX = 280;   // max points in the signal trace
+  const BIRD_X = 152;      
+  const BIRD_R = 13;       
+  const PIPE_W = 64;       
+  const GAP    = 132;      
+  const SCROLL = 140;      
+  const SPACING = 300;     
+  const TRAIL_MAX = 280;   
 
-  // Open guitar strings, low -> high. Each becomes a pipe.
   const STRINGS = [
     { name:"E2", freq: 82.41 },
     { name:"A2", freq:110.00 },
@@ -25,10 +24,17 @@
     { name:"E4", freq:329.63 },
   ];
 
+  // Matched Colors Scheme
   const COL = {
-    phosphor:"#dddddd", phosphorDim:"#555555", amber:"#ffffff",
-    white:"#ffffff", grid:"rgba(255,255,255,0.04)", line:"rgba(255,255,255,0.10)",
-    fill:"rgba(255,255,255,0.06)", bg:"#080808",
+    textMain: "#f8fafc",
+    textMuted: "#94a3b8",
+    accentGreen: "#22c55e",
+    accentRed: "#ef4444",
+    accentYellow: "#eab308",
+    grid: "rgba(148, 163, 184, 0.04)", 
+    line: "rgba(148, 163, 184, 0.12)",
+    pipeFill: "rgba(51, 65, 85, 0.35)", 
+    bg: "#0f172a",
   };
   const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
@@ -41,9 +47,7 @@
   const noteEl=el("note"), freqEl=el("freq"), scoreEl=el("score"),
         centsEl=el("cents"), needle=el("needle"), targetEl=el("target"),
         dotEl=el("dot"), linkEl=el("link"), hintEl=el("hint"),
-        startOverlay=el("startOverlay"), overOverlay=el("overOverlay"),
-        startMode=el("startMode"), finalScore=el("finalScore"),
-        bestScore=el("bestScore");
+        overOverlay=el("overOverlay"), finalScore=el("finalScore"), bestScore=el("bestScore");
 
   /* =====================================================================
      HELPERS
@@ -64,25 +68,24 @@
   /* =====================================================================
      STATE
      ===================================================================== */
-  let state = "ready";            // ready | playing | gameover
+  let state = "playing"; // Skips 'ready' and jumps straight into play mode
   const bird = { x:BIRD_X, y:LH/2 };
   let pipes = [];
-  let bag = [];                   // shuffled queue of string indices
-  let trail = [];                 // signal trace points {x,y}
+  let bag = [];    
+  let trail = [];  
   let score = 0, best = 0;
 
-  // signal sources
   let ws = null, wsConnected = false;
-  let signalFreq = 0;             // last freq from WebSocket (0 = none)
-  let lastMsg = null;             // last full WS payload
-  let simFreq = null;             // simulated freq (mouse / keys), used only when offline
+  let signalFreq = 0;   
+  let lastMsg = null;   
+  let simFreq = null;   
 
   /* =====================================================================
-     PIPE BAG (random order, reshuffled after all 6 used)
+     PIPE BAG
      ===================================================================== */
-  function refillBag(){
+  function refillBag() {
     bag = STRINGS.map((_,i) => i);
-    for (let i = bag.length - 1; i > 0; i--){      // Fisher–Yates
+    for (let i = bag.length - 1; i > 0; i--){
       const j = Math.floor(Math.random() * (i + 1));
       [bag[i], bag[j]] = [bag[j], bag[i]];
     }
@@ -107,7 +110,6 @@
   function startGame(){
     resetGame();
     state = "playing";
-    startOverlay.hidden = true;
     overOverlay.hidden = true;
     lastT = performance.now();
   }
@@ -119,17 +121,10 @@
     bestScore.textContent = "BEST " + best;
     overOverlay.hidden = false;
   }
-  function primaryAction(){
-    if (state === "ready") startGame();
-    else if (state === "gameover") startGame();
-  }
 
-  /* =====================================================================
-     SIGNAL: choose effective frequency this frame
-     ===================================================================== */
   function currentFreq(){
-    if (wsConnected) return signalFreq;   // live: 0/none when silent
-    return simFreq;                        // offline test mode
+    if (wsConnected) return signalFreq; 
+    return simFreq;                        
   }
 
   /* =====================================================================
@@ -137,12 +132,10 @@
      ===================================================================== */
   let hasSignal = false;
   function update(dt){
-    // --- Bird height locked to frequency (no gravity / physics) ---
     const f = currentFreq();
     hasSignal = (typeof f === "number" && isFinite(f) && f > 0);
-    if (hasSignal) bird.y = freqToY(f);   // else: stay at last position
+    if (hasSignal) bird.y = freqToY(f); 
 
-    // --- Signal trace (sweeps left like an oscilloscope) ---
     trail.push({ x:bird.x, y:bird.y });
     if (trail.length > TRAIL_MAX) trail.shift();
     for (const t of trail) t.x -= SCROLL * dt;
@@ -150,13 +143,10 @@
 
     if (state !== "playing") return;
 
-    // --- Move pipes ---
     for (const p of pipes) p.x -= SCROLL * dt;
 
-    // --- Spawn (distance based, frame-rate independent) ---
     if (pipes.length === 0 || pipes[pipes.length - 1].x <= LW - SPACING) spawnPipe();
 
-    // --- Collisions ---
     for (const p of pipes){
       const overlap = bird.x + BIRD_R > p.x && bird.x - BIRD_R < p.x + PIPE_W;
       if (!overlap) continue;
@@ -164,12 +154,10 @@
       if (bird.y - BIRD_R < top || bird.y + BIRD_R > bot){ gameOver(); return; }
     }
 
-    // --- Scoring (count once the pipe clears the bird) ---
     for (const p of pipes){
       if (!p.counted && p.x + PIPE_W < bird.x - BIRD_R){ p.counted = true; score++; }
     }
 
-    // --- Cull off-screen pipes ---
     pipes = pipes.filter(p => p.x + PIPE_W > -10);
   }
 
@@ -182,76 +170,71 @@
     ctx.clearRect(0,0,LW,LH);
     ctx.fillStyle = COL.bg; ctx.fillRect(0,0,LW,LH);
 
-    // grid
+    // Dynamic clean matrix lines
     ctx.strokeStyle = COL.grid; ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x=0; x<=LW; x+=36){ ctx.moveTo(x+.5,0); ctx.lineTo(x+.5,LH); }
     for (let y=0; y<=LH; y+=36){ ctx.moveTo(0,y+.5); ctx.lineTo(LW,y+.5); }
     ctx.stroke();
 
-    // string reference lines + labels (the "staff")
-    ctx.font = "600 10px " + getMono();
+    // Staff reference lines
+    ctx.font = "600 11px system-ui, sans-serif";
     ctx.textBaseline = "middle";
     for (const s of STRINGS){
       const y = freqToY(s.freq);
       ctx.strokeStyle = COL.line; ctx.lineWidth = 1;
-      ctx.setLineDash([2,6]); ctx.beginPath();
+      ctx.setLineDash([4,6]); ctx.beginPath();
       ctx.moveTo(0, y+.5); ctx.lineTo(LW, y+.5); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.textAlign = "left";
-      ctx.fillText(s.name, 7, y);
+      ctx.fillStyle = "rgba(148, 163, 184, 0.45)"; ctx.textAlign = "left";
+      ctx.fillText(s.name, 10, y);
     }
 
-    // pipes
     const tgt = targetPipe();
     for (const p of pipes){
-      const isTgt = (p === tgt);
-      drawPipe(p, isTgt);
+      drawPipe(p, (p === tgt));
     }
 
-    // signal trace
+    // Oscilloscope tail trace
     for (let i=0; i<trail.length; i++){
       const a = (i + 1) / trail.length;
-      ctx.globalAlpha = a * 0.5;
-      ctx.fillStyle = COL.phosphor;
+      ctx.globalAlpha = a * 0.4;
+      ctx.fillStyle = COL.textMain;
       const r = 1 + a * (BIRD_R * 0.45);
       ctx.beginPath(); ctx.arc(trail[i].x, trail[i].y, r, 0, 7); ctx.fill();
     }
     ctx.globalAlpha = 1;
 
-    // bird
+    // Player node (the Bird)
     const matching = isMatchingTarget(tgt);
     ctx.globalAlpha = hasSignal ? 1 : 0.4;
-    ctx.fillStyle = matching ? COL.amber : COL.phosphor;
+    ctx.fillStyle = matching ? COL.accentGreen : COL.textMain;
     ctx.beginPath(); ctx.arc(bird.x, bird.y, BIRD_R, 0, 7); ctx.fill();
-    ctx.fillStyle = "#080808";
-    ctx.beginPath(); ctx.arc(bird.x, bird.y, BIRD_R * 0.42, 0, 7); ctx.fill();
+    ctx.fillStyle = COL.bg;
+    ctx.beginPath(); ctx.arc(bird.x, bird.y, BIRD_R * 0.4, 0, 7); ctx.fill();
     ctx.globalAlpha = 1;
   }
 
   function drawPipe(p, isTgt){
     const top = p.gapY - GAP/2;
     const bot = p.gapY + GAP/2;
-    const edge = isTgt ? "#ffffff" : "#444444";
+    const edge = isTgt ? COL.textMain : "#334155";
 
-    ctx.fillStyle = COL.fill;
+    ctx.fillStyle = COL.pipeFill;
     ctx.strokeStyle = edge;
-    ctx.lineWidth = isTgt ? 2 : 1;
+    ctx.lineWidth = isTgt ? 2.5 : 1;
 
-    // top band
     if (top > 0){
       ctx.fillRect(p.x, 0, PIPE_W, top);
       ctx.strokeRect(p.x + .5, .5, PIPE_W - 1, top - 1);
     }
-    // bottom band
     if (bot < LH){
       ctx.fillRect(p.x, bot, PIPE_W, LH - bot);
       ctx.strokeRect(p.x + .5, bot + .5, PIPE_W - 1, LH - bot - 1);
     }
 
-    // gap label (the string you must play)
-    ctx.fillStyle = edge;
-    ctx.font = (isTgt ? "700 " : "600 ") + "16px " + getMono();
+    ctx.fillStyle = isTgt ? COL.textMain : COL.textMuted;
+    ctx.font = "700 16px system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(p.string.name, p.x + PIPE_W/2, p.gapY);
   }
@@ -260,7 +243,6 @@
      HUD SYNC (DOM)
      ===================================================================== */
   function readDisplay(){
-    // returns {label, freq, cents, valid}
     if (wsConnected && lastMsg){
       const f = Number(lastMsg.frequency);
       if (isFinite(f) && f > 0){
@@ -292,35 +274,31 @@
     freqEl.textContent = d.valid ? d.freq.toFixed(1) + " Hz" : "—— Hz";
     scoreEl.textContent = score;
 
-    // tuner needle
+    // Tuner layout mapping rules
     if (d.valid && d.cents !== null){
       const c = clamp(d.cents, -50, 50);
       needle.style.left = (50 + (c / 50) * 50) + "%";
       const ac = Math.abs(d.cents);
-      const col = ac <= 5 ? "#ffffff" : ac <= 15 ? "#aaaaaa" : "#666666";
+      const col = ac <= 5 ? "var(--accent-green)" : ac <= 15 ? "var(--accent-yellow)" : "var(--accent-red)";
       needle.style.background = col;
-      needle.style.boxShadow = "none";
       centsEl.style.color = col;
       centsEl.textContent = (d.cents > 0 ? "+" : "") + d.cents + "¢";
     } else {
       needle.style.left = "50%";
-      needle.style.background = COL.phosphorDim;
-      needle.style.boxShadow = "none";
-      centsEl.style.color = COL.dim || "#4c6b5b";
+      needle.style.background = "#475569";
+      centsEl.style.color = "var(--text-muted)";
       centsEl.textContent = "—";
     }
 
-    // target
     targetEl.textContent = tgt ? tgt.string.name : "—";
     targetEl.classList.toggle("hit", isMatchingTarget(tgt));
 
-    // status
     if (wsConnected){
       dotEl.className = "dot live"; linkEl.textContent = "LIVE";
-      hintEl.textContent = "play your guitar's open strings";
+      hintEl.textContent = "Play your guitar's open strings";
     } else {
-      dotEl.className = "dot sim"; linkEl.textContent = "SIM";
-      hintEl.textContent = "SIM · drag on screen · keys 1–6 = strings";
+      dotEl.className = "dot sim"; linkEl.textContent = "SIM MODE";
+      hintEl.textContent = "Drag display area • Keys 1–6 = Strings";
     }
   }
 
@@ -329,7 +307,7 @@
      ===================================================================== */
   let lastT = performance.now();
   function loop(now){
-    const dt = Math.min((now - lastT) / 1000, 0.05); // clamp big gaps
+    const dt = Math.min((now - lastT) / 1000, 0.05); 
     lastT = now;
     update(dt);
     draw();
@@ -346,19 +324,19 @@
     catch (e) { scheduleReconnect(); return; }
     ws = socket;
  
-    socket.onopen = () => { wsConnected = true; updateStartMode(); };
+    socket.onopen = () => { wsConnected = true; };
     socket.onclose = () => {
-      if (ws === socket){ wsConnected = false; signalFreq = 0; lastMsg = null; updateStartMode(); }
+      if (ws === socket){ wsConnected = false; signalFreq = 0; lastMsg = null; }
       scheduleReconnect();
     };
-    socket.onerror = () => {}; // close handler will fire
+    socket.onerror = () => {}; 
     socket.onmessage = ev => {
       try {
         const d = JSON.parse(ev.data);
         lastMsg = d;
         const f = Number(d.frequency);
         signalFreq = (isFinite(f) && f > 0) ? f : 0;
-      } catch (e) { /* ignore malformed frames */ }
+      } catch (e) {}
     };
   }
   let reconnectTimer = null;
@@ -366,20 +344,10 @@
     clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(connect, 1500);
   }
-  function updateStartMode(){
-    if (wsConnected){
-      startMode.textContent = "● ESP32 connected — live pitch input";
-      startMode.classList.add("live");
-    } else {
-      startMode.textContent = "No ESP32 detected — SIM mode (drag on screen, or keys 1–6)";
-      startMode.classList.remove("live");
-    }
-  }
 
   /* =====================================================================
      INPUT
      ===================================================================== */
-  // SIM: move/drag over the screen sets pitch (only when offline)
   function pointerToFreq(clientX, clientY){
     const r = canvas.getBoundingClientRect();
     const yFrac = (clientY - r.top) / r.height;
@@ -388,26 +356,24 @@
   canvas.addEventListener("pointermove", e => { if (!wsConnected) pointerToFreq(e.clientX, e.clientY); });
   canvas.addEventListener("pointerdown", e => { if (!wsConnected) pointerToFreq(e.clientX, e.clientY); });
 
-  // Keyboard: Space = start/restart; 1–6 snap to each string (SIM only)
   window.addEventListener("keydown", e => {
-    if (e.code === "Space" || e.key === " "){ e.preventDefault(); primaryAction(); return; }
+    if (e.code === "Space" || e.key === " "){ 
+        e.preventDefault(); 
+        if (state === "gameover") startGame();
+        return; 
+    }
     if (!wsConnected){
       const n = parseInt(e.key, 10);
       if (n >= 1 && n <= 6) simFreq = STRINGS[n - 1].freq;
     }
   });
 
-  // Buttons / tap-to-start
-  el("startBtn").addEventListener("click", e => { e.stopPropagation(); startGame(); });
   el("againBtn").addEventListener("click", e => { e.stopPropagation(); startGame(); });
-  startOverlay.addEventListener("click", () => { if (state === "ready") startGame(); });
   overOverlay.addEventListener("click", () => { if (state === "gameover") startGame(); });
 
   /* =====================================================================
-     CANVAS SIZING (crisp on hi-dpi, fixed logical coordinates)
+     CANVAS SIZING
      ===================================================================== */
-  let _mono = null;
-  function getMono(){ return _mono || (_mono = getComputedStyle(document.body).fontFamily); }
   function fitCanvas(){
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width  = Math.round(LW * dpr);
@@ -419,13 +385,8 @@
   /* =====================================================================
      INIT
      ===================================================================== */
-  // build the string reference chips on the start screen
-  el("chips").innerHTML = STRINGS
-    .map(s => `<span class="chip">${s.name} <span>${s.freq.toFixed(s.freq % 1 ? 2 : 0)} Hz</span></span>`)
-    .join("");
-
   fitCanvas();
-  updateStartMode();
   connect();
+  resetGame(); 
   requestAnimationFrame(loop);
 })();

@@ -3,16 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PITCH PIPES — open-string pitch trainer</title>
+  <title>PITCH PIPES — Open-String Pitch Trainer</title>
   <link rel="stylesheet" href="game_style.css">
 </head>
 <body>
   <main class="device" aria-label="Pitch Pipes guitar trainer">
-    <!-- Top readout -->
     <div class="bar">
       <div class="status">
         <span class="dot" id="dot"></span>
-        <span><span class="lbl">SIGNAL</span><span id="link" style="font-size:11px;letter-spacing:.12em;color:var(--dim)">—</span></span>
+        <span><span class="lbl">SIGNAL</span><span id="link">—</span></span>
       </div>
       <div class="readout">
         <div class="note flat" id="note">—</div>
@@ -24,30 +23,17 @@
       </div>
     </div>
 
-    <!-- Scope screen -->
     <div class="screen" id="screen">
       <canvas id="game"></canvas>
 
-      <!-- Start overlay -->
-      <div class="overlay" id="startOverlay">
-        <h1 class="title">PITCH PIPES</h1>
-        <div class="subtitle">open-string pitch trainer</div>
-        <p class="howto">Your detected pitch is the bird. Each gap is an open string — <b>play that string</b> to fly through it. Higher pitch flies higher.</p>
-        <div class="chips" id="chips"></div>
-        <div class="mode" id="startMode">Looking for ESP32…</div>
-        <button class="btn" id="startBtn">▶ Start</button>
-      </div>
-
-      <!-- Game over overlay -->
       <div class="overlay" id="overOverlay" hidden>
-        <div class="go-sub">SIGNAL LOST</div>
+        <div class="go-sub">SIGNAL LOST / GAME OVER</div>
         <div class="big" id="finalScore">0</div>
         <div class="best" id="bestScore">BEST 0</div>
         <button class="btn" id="againBtn">↻ Play again</button>
       </div>
     </div>
 
-    <!-- Bottom bar: tuner + target -->
     <div class="footer">
       <div class="tuner" aria-label="tuning meter">
         <span class="gl">♭</span>
