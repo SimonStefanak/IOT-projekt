@@ -5,8 +5,8 @@
 #include <LittleFS.h>
 
 // ─── WiFi ────────────────────────────────────────────────────────
-const char* ssid     = "HUAWEI-M4ma-2G";
-const char* password = "Ce2cvj3x";
+const char* ssid     = "iPhone";
+const char* password = "jarosynek";
 
 // ─── WebSocket ───────────────────────────────────────────────────
 AsyncWebServer server(80);

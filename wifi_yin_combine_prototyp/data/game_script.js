@@ -4,7 +4,9 @@
      CONFIG
      ===================================================================== */
   const FREQ_MIN = 70;     // Hz mapped to bottom of screen
+  let FREQ_MIN_DYN = FREQ_MIN;
   const FREQ_MAX = 360;    // Hz mapped to top of screen
+  let FREQ_MAX_DYN = FREQ_MAX;
   const LW = 540, LH = 720;// logical canvas resolution
 
   const BIRD_X = 152;      
@@ -15,14 +17,49 @@
   const SPACING = 300;     
   const TRAIL_MAX = 280;   
 
-  const STRINGS = [
-    { name:"E2", freq: 82.41 },
-    { name:"A2", freq:110.00 },
-    { name:"D3", freq:146.83 },
-    { name:"G3", freq:196.00 },
-    { name:"B3", freq:246.94 },
-    { name:"E4", freq:329.63 },
-  ];
+  const TUNINGS = {
+  "Standard":    [
+    { name:"E2", freq:82.41 }, { name:"A2", freq:110.00 },
+    { name:"D3", freq:146.83 }, { name:"G3", freq:196.00 },
+    { name:"B3", freq:246.94 }, { name:"E4", freq:329.63 },
+  ],
+  "Eb Standard": [
+    { name:"Eb2", freq:77.78 }, { name:"Ab2", freq:103.83 },
+    { name:"Db3", freq:138.59 }, { name:"Gb3", freq:185.00 },
+    { name:"Bb3", freq:233.08 }, { name:"Eb4", freq:311.13 },
+  ],
+  "Drop D":      [
+    { name:"D2", freq:73.42 }, { name:"A2", freq:110.00 },
+    { name:"D3", freq:146.83 }, { name:"G3", freq:196.00 },
+    { name:"B3", freq:246.94 }, { name:"E4", freq:329.63 },
+  ],
+  "D Standard":  [
+    { name:"D2", freq:73.42 }, { name:"G2", freq:97.99 },
+    { name:"C3", freq:130.81 }, { name:"F3", freq:174.61 },
+    { name:"A3", freq:220.00 }, { name:"D4", freq:293.66 },
+  ],
+  "Db Standard": [
+    { name:"Db2", freq:69.30 }, { name:"Gb2", freq:92.50 },
+    { name:"B2",  freq:123.47 }, { name:"E3", freq:164.81 },
+    { name:"Ab3", freq:207.65 }, { name:"Db4", freq:277.18 },
+  ],
+  "Drop C":      [
+    { name:"C2", freq:65.41 }, { name:"G2", freq:97.99 },
+    { name:"C3", freq:130.81 }, { name:"F3", freq:174.61 },
+    { name:"A3", freq:220.00 }, { name:"D4", freq:293.66 },
+  ],
+};
+
+let STRINGS = TUNINGS["Standard"];
+
+function applyTuning(name) {
+  if (TUNINGS[name]) {
+    STRINGS = TUNINGS[name];
+    // Prepočítame frekvenčné rozsahy podľa nového tuningu
+    FREQ_MIN_DYN = STRINGS[0].freq * 0.85;
+    FREQ_MAX_DYN = STRINGS[5].freq * 1.15;
+  }
+}
 
   // Matched Colors Scheme
   const COL = {
@@ -53,8 +90,8 @@
      HELPERS
      ===================================================================== */
   const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
-  const freqToY = f => LH * (1 - (clamp(f,FREQ_MIN,FREQ_MAX) - FREQ_MIN) / (FREQ_MAX - FREQ_MIN));
-  const yToFreq = y => FREQ_MAX - (clamp(y,0,LH) / LH) * (FREQ_MAX - FREQ_MIN);
+  const freqToY = f => LH * (1 - (clamp(f, FREQ_MIN_DYN, FREQ_MAX_DYN) - FREQ_MIN_DYN) / (FREQ_MAX_DYN - FREQ_MIN_DYN));
+  const yToFreq = y => FREQ_MAX_DYN - (clamp(y, 0, LH) / LH) * (FREQ_MAX_DYN - FREQ_MIN_DYN);
 
   function freqToNote(f){
     const midi = 69 + 12 * Math.log2(f / 440);
@@ -333,6 +370,11 @@
     socket.onmessage = ev => {
       try {
         const d = JSON.parse(ev.data);
+        if (d.event === "init" || d.event === "tuning_changed") {
+          applyTuning(d.tuning_name);
+          refillBag();  // resetujeme bag aby sme nezostali so starými indexmi
+          return;
+        }
         lastMsg = d;
         const f = Number(d.frequency);
         signalFreq = (isFinite(f) && f > 0) ? f : 0;

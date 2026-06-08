@@ -1,19 +1,27 @@
 const ws = new WebSocket(`ws://${location.host}/ws`);
 
-const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const octaves = [2, 3, 4, 5];
+const TUNINGS = {
+  "Standard":    [{note:"E",octave:2},{note:"A",octave:2},{note:"D",octave:3},{note:"G",octave:3},{note:"B",octave:3},{note:"E",octave:4}],
+  "Eb Standard": [{note:"Eb",octave:2},{note:"Ab",octave:2},{note:"Db",octave:3},{note:"Gb",octave:3},{note:"Bb",octave:3},{note:"Eb",octave:4}],
+  "Drop D":      [{note:"D",octave:2},{note:"A",octave:2},{note:"D",octave:3},{note:"G",octave:3},{note:"B",octave:3},{note:"E",octave:4}],
+  "D Standard":  [{note:"D",octave:2},{note:"G",octave:2},{note:"C",octave:3},{note:"F",octave:3},{note:"A",octave:3},{note:"D",octave:4}],
+  "Db Standard": [{note:"Db",octave:2},{note:"Gb",octave:2},{note:"B",octave:2},{note:"E",octave:3},{note:"Ab",octave:3},{note:"Db",octave:4}],
+  "Drop C":      [{note:"C",octave:2},{note:"G",octave:2},{note:"C",octave:3},{note:"F",octave:3},{note:"A",octave:3},{note:"D",octave:4}],
+};
+
+let activeStrings = TUNINGS["Standard"];
 const TOTAL_LEVELS = 5;
 
 let targetNote = "";
 let targetOctave = 0;
 let correct = false;
 let level = 1;
-let attempts = 0;
 
 function pickRandomNote() {
-    targetNote = notes[Math.floor(Math.random() * notes.length)];
-    targetOctave = octaves[Math.floor(Math.random() * octaves.length)];
-    
+    const s = activeStrings[Math.floor(Math.random() * activeStrings.length)];
+    targetNote = s.note;
+    targetOctave = s.octave;
+
     document.getElementById("target").textContent = targetNote + targetOctave;
     document.querySelector(".target-section").classList.remove("correct");
     
@@ -36,7 +44,7 @@ function nextNote() {
             document.body.innerHTML = `
                 <div class="game-container">
                     <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--accent-green);">🎉 Victory!</h1>
-                    <p style="color: var(--text-muted); margin-bottom: 2rem;">You completed all ${TOTAL_LEVELS} levels in <strong>${attempts}</strong> total attempts.</p>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem;">You completed all ${TOTAL_LEVELS} levels.</p>
                     <button onclick="location.reload()" id="againBtn">Play Again</button>
                 </div>
             `;
@@ -49,11 +57,16 @@ function nextNote() {
 }
 
 ws.onmessage = (event) => {
-    console.log(event.data); 
     const data = JSON.parse(event.data);
+
+    if (data.event === "init" || data.event === "tuning_changed") {
+        if (TUNINGS[data.tuning_name]) {
+            activeStrings = TUNINGS[data.tuning_name];
+            pickRandomNote(); // nová nota z nového tuningu
+        }
+        return;
+    }
     
-    attempts++;
-    document.getElementById("attempts-display").textContent = `Attempts: ${attempts}`;
 
     // Limit cents to a max/min mapping boundary (-50 to +50 cents)
     const cents = Math.max(-50, Math.min(50, data.cents_off));
